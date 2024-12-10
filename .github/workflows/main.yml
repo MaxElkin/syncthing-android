@@ -11,16 +11,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout main repository with submodules
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive  # Проверка сабмодулей
 
-    - name: Print the tag
+    - name: Check if the tag matches a pattern in a submodule
+      id: check_tag
       run: |
-        echo "Triggered by tag: ${{ github.ref_name }}"
+        echo "Current tag: ${{ github.ref_name }}"
 
-    - name: Build Project
+        # Регулярное выражение для поиска подходящих тегов
+        REGEX="^v[0-9]+\.*"  # Например, для тегов вида v1.0.0
+
+        # Находим последний тег в сабмодуле, который подходит под регулярку
+        TAG=$(git submodule foreach --quiet '
+          git fetch --tags && 
+          git tag -l | grep -E "$REGEX" | sort -V | tail -n 1' || true)
+
+        if [ -n "$TAG" ]; then
+          echo "Found matching tag: $TAG"
+          echo "IS_SUBMODULE_TAG=true" >> $GITHUB_ENV
+          echo "SUBMODULE_TAG=$TAG" >> $GITHUB_ENV
+        else
+          echo "No matching tag found in submodule"
+          echo "IS_SUBMODULE_TAG=false" >> $GITHUB_ENV
+        fi
+
+    - name: Update submodule to the latest matching tag
+      if: env.IS_SUBMODULE_TAG == 'true'
       run: |
-        echo "Building project..."
-        # ./gradlew build  # Или другая команда для сборки
+        echo "Updating submodule to tag: $SUBMODULE_TAG"
+        
+        # Обновляем сабмодуль на последний тег
+        git submodule update --remote "$SUBMODULE_TAG"
+
+        # Сборка проекта
+        #./gradlew build
+
+    - name: Skip build (no matching tag in submodule)
+      if: env.IS_SUBMODULE_TAG == 'false'
+      run: echo "No relevant tag in submodule. Skipping build."
+
