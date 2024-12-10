@@ -1,0 +1,24 @@
+name: Build on Submodule Tag
+
+on:
+  push:
+    tags:
+      - 'v-1.*'  # Запуск только на теги сабмодуля с префиксом submodule-v
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout main repository with submodules
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive  # Проверка сабмодулей
+
+    - name: Print the tag
+      run: echo "Triggered by tag: ${{ github.ref_name }}"
+
+    - name: Build Project
+      run: |
+        echo "Building project..."
+        # ./gradlew build  # Или другая команда для сборки
