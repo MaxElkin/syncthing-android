@@ -11,7 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
+    
+    - name: Checkout main repository with submodules
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
     - name: Check if the tag matches a pattern in a submodule
       id: check_tag
       run: |
