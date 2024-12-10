@@ -1,9 +1,10 @@
 name: Build on Submodule Tag
 
 on:
-  push:
-    tags:
-      - 'v-1.*'  # Запускать workflow на любые пуши тегов в репозитории
+  workflow_dispatch:
+  #push:
+  #  tags:
+  #    - 'v-1.*'  # Запускать workflow на любые пуши тегов в репозитории
 
 jobs:
   check-and-build:
