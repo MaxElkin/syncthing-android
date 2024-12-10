@@ -3,47 +3,24 @@ name: Build on Submodule Tag
 on:
   workflow_dispatch:
   #push:
-  #  tags:
-  #    - 'v-1.*'  # Запускать workflow на любые пуши тегов в репозитории
+    # tags:
+     # - 'submodule-v*'  # Запуск только на теги сабмодуля с префиксом submodule-v
 
 jobs:
-  check-and-build:
+  build:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout main repository with submodules
       uses: actions/checkout@v3
       with:
-        submodules: recursive  # Клонируем репозиторий вместе с сабмодулями
+        submodules: recursive  # Проверка сабмодулей
 
-    - name: Check if the tag is in a submodule
-      id: check_tag
+    - name: Print the tag
       run: |
-        echo "Current tag: ${{ github.ref_name }}"
+        echo "Triggered by tag: ${{ github.ref_name }}"
 
-        # Проверяем, есть ли тег в сабмодуле
-        TAG_PATH=$(git submodule foreach --quiet '[ "$(git tag --contains $GITHUB_REF 2>/dev/null)" ] && echo $sm_path' || true)
-
-        if [ -n "$TAG_PATH" ]; then
-        echo "Tag is in submodule: $TAG_PATH"
-        echo "IS_SUBMODULE_TAG=true" >> $GITHUB_ENV
-        echo "SUBMODULE_PATH=$TAG_PATH" >> $GITHUB_ENV
-        else
-        echo "Tag is not in a submodule"
-        echo "IS_SUBMODULE_TAG=false" >> $GITHUB_ENV
-        fi
-
-    - name: Build project if tag is in a submodule
-      if: env.IS_SUBMODULE_TAG == 'true'
+    - name: Build Project
       run: |
-        echo "Submodule path: $SUBMODULE_PATH"
-        
-        # Обновляем сабмодуль
-        git submodule update --remote "$SUBMODULE_PATH"
-
-        # Сборка проекта
-        #./gradlew build  # Или другая команда сборки
-
-    - name: Skip build (tag not in submodule)
-      if: env.IS_SUBMODULE_TAG == 'false'
-      run: echo "No relevant tag in submodule. Skipping build."
+        echo "Building project..."
+        # ./gradlew build  # Или другая команда для сборки
