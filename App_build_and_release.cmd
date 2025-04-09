@@ -8,7 +8,6 @@ REM Script Consts.
 SET CLEANUP_BEFORE_BUILD=1
 REM
 REM Runtime Variables.
-IF EXIST "%LocalAppData%\Android\Sdk" SET "ANDROID_SDK_ROOT=%LocalAppData%\Android\Sdk"
 IF NOT DEFINED ANDROID_SDK_ROOT SET "ANDROID_SDK_ROOT=%SCRIPT_PATH%..\syncthing-android-prereq"
 REM
 REM SET ANDROID_PUBLISHER_CREDENTIALS=%userprofile%\.android\play_key.json"
@@ -39,7 +38,7 @@ REM
 echo [INFO] Let's prepare a new "%SYNCTHING_RELEASE_KEY_ALIAS%" release.
 REM
 echo [INFO] Checking release prerequisites ...
-IF NOT EXIST "%ANDROID_PUBLISHER_CREDENTIALS%" echo [ERROR] ANDROID_PUBLISHER_CREDENTIALS file not found. Please retry. & pause & goto :checkPrerequisites
+IF NOT EXIST "%ANDROID_PUBLISHER_CREDENTIALS%" echo [WARN] ANDROID_PUBLISHER_CREDENTIALS file not found. Publishing steps will be skipped later.
 FOR /F "tokens=*" %%i in ('type "%ANDROID_PUBLISHER_CREDENTIALS%" 2^>NUL:') DO SET ANDROID_PUBLISHER_CREDENTIALS=%%i
 REM
 REM User has to enter the signing password if it is not filled in here.
@@ -56,14 +55,14 @@ IF NOT DEFINED SIGNING_PASSWORD echo [ERROR] Signing password is required. Pleas
 REM
 :absLint
 REM
-copy /y "%SCRIPT_PATH%app\src\main\play\release-notes\en-GB\beta.txt" "%SCRIPT_PATH%app\src\main\play\release-notes\en-GB\default.txt" 
+copy /y "%SCRIPT_PATH%app\src\main\play\release-notes\en-US\beta.txt" "%SCRIPT_PATH%app\src\main\play\release-notes\en-US\default.txt" 
 REM
 echo [INFO] Running lint before building ...
 REM
-call gradlew --quiet lint%BUILD_FLAVOUR_RELEASE% & SET RESULT=%ERRORLEVEL%
+call gradlew lint%BUILD_FLAVOUR_RELEASE% & SET RESULT=%ERRORLEVEL%
 IF NOT "!RESULT!" == "0" echo [ERROR] "gradlew lint%BUILD_FLAVOUR_RELEASE%" exited with code #%RESULT%. & goto :eos
 REM
-call gradlew --quiet lint%BUILD_FLAVOUR_GPLAY% & SET RESULT=%ERRORLEVEL%
+call gradlew lint%BUILD_FLAVOUR_GPLAY% & SET RESULT=%ERRORLEVEL%
 IF NOT "!RESULT!" == "0" echo [ERROR] "gradlew lint%BUILD_FLAVOUR_GPLAY%" exited with code #%RESULT%. & goto :eos
 REM
 REM Building APK
@@ -89,6 +88,8 @@ IF NOT "%RESULT%" == "0" echo [ERROR] "gradlew deleteUnsupportedPlayTranslations
 REM
 REM Copy build artifacts with correct file name to upload folder.
 call "%SCRIPT_PATH%postbuild_copy_apk.cmd"
+REM
+IF NOT EXIST "%ANDROID_PUBLISHER_CREDENTIALS%" echo [WARN] ANDROID_PUBLISHER_CREDENTIALS not set. Skipping. & goto :eos
 REM
 :askUserReadyToPublish
 SET UI_ANSWER=

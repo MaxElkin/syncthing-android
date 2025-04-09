@@ -200,7 +200,18 @@ public class NotificationHandler {
          */
         int idToShow = syncthingRunning ? ID_PERSISTENT : ID_PERSISTENT_WAITING;
         int idToCancel = syncthingRunning ? ID_PERSISTENT_WAITING : ID_PERSISTENT;
-        Intent intent = new Intent(mContext, MainActivity.class);
+        
+        Intent openAppIntent = new Intent(mContext, MainActivity.class);
+        
+        Intent exitIntent = new Intent(mContext, MainActivity.class);
+        exitIntent.setAction(MainActivity.ACTION_EXIT);
+        PendingIntent exitPendingIntent = PendingIntent.getActivity(
+                    mContext,
+                    0,
+                    exitIntent,
+                    FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        
         NotificationChannel channel = syncthingRunning ? mPersistentChannel : mPersistentChannelWaiting;
         NotificationCompat.Builder builder = getNotificationBuilder(channel)
                 .setContentTitle(text)
@@ -208,12 +219,13 @@ public class NotificationHandler {
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setPriority(NotificationCompat.PRIORITY_MIN)
-                .setContentIntent(PendingIntent.getActivity(mContext, 0, intent, FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
+                .setContentIntent(PendingIntent.getActivity(mContext, 0, openAppIntent, FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT))
+                .addAction(R.drawable.baseline_close_24, mContext.getString(R.string.exit), exitPendingIntent);
         if (!appShutdownInProgress) {
             if (startForegroundService) {
                 Log.v(TAG, "Starting foreground service or updating notification");
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    service.startForeground(idToShow, builder.build(), FlavorConstants.FOREGROUND_SERVICE_TYPE);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    service.startForeground(idToShow, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
                 } else {
                     service.startForeground(idToShow, builder.build());
                 }
